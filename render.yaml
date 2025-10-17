@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: expression-tracker-web
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000
+    scaling:
+      minInstances: 1
+      maxInstances: 3
