@@ -605,6 +605,11 @@
         }
 
         function loadImageStatus(loadedExpressions) {
+            if (!loadedExpressions || typeof loadedExpressions !== 'object') {
+                console.warn('loadImageStatus called with invalid data:', loadedExpressions);
+                return;
+            }
+            
             Object.keys(loadedExpressions).forEach(expression => {
                 const statusElement = document.getElementById(`status-${expression}`);
                 if (statusElement) {
@@ -723,7 +728,7 @@
                 
                 if (result.success) {
                     updateStatus(`Preset '${presetName}' loaded successfully`, 'success');
-                    loadImageStatus(); // Refresh image status
+                    loadExpressions(); // Refresh image status
                 } else {
                     updateStatus(`Failed to load preset: ${result.error}`, 'error');
                 }
@@ -810,5 +815,6 @@
     </script>
 </body>
 </html>
+
 
 
