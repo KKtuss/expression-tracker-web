@@ -101,6 +101,7 @@
             object-fit: cover;
             background: #000000;
             display: none;
+            transform: scaleX(-1); /* Mirror the overlay to match video */
         }
         
         .expression-image {
@@ -510,12 +511,33 @@
             
             // Update overlay frame with tracking data
             if (result.frame_with_overlay) {
-                overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
-                // Show overlay or video based on toggle setting
-                if (showOverlay) {
-                    overlayElement.style.display = 'block';
-                    videoElement.style.display = 'none';
-                } else {
+                try {
+                    overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
+                    
+                    // Wait for image to load before switching display
+                    overlayElement.onload = function() {
+                        // Show overlay or video based on toggle setting
+                        if (showOverlay) {
+                            overlayElement.style.display = 'block';
+                            videoElement.style.display = 'none';
+                        } else {
+                            overlayElement.style.display = 'none';
+                            videoElement.style.display = 'block';
+                        }
+                    };
+                    
+                    // If image is already cached and loaded
+                    if (overlayElement.complete) {
+                        if (showOverlay) {
+                            overlayElement.style.display = 'block';
+                            videoElement.style.display = 'none';
+                        } else {
+                            overlayElement.style.display = 'none';
+                            videoElement.style.display = 'block';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating overlay:', error);
                     overlayElement.style.display = 'none';
                     videoElement.style.display = 'block';
                 }
@@ -663,22 +685,34 @@
         }
 
         function toggleOverlay() {
-            showOverlay = !showOverlay;
-            
-            if (overlayElement.src) {
-                // If we have overlay data, toggle between overlay and raw video
-                if (showOverlay) {
-                    overlayElement.style.display = 'block';
-                    videoElement.style.display = 'none';
-                    toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
+            try {
+                showOverlay = !showOverlay;
+                
+                if (overlayElement && overlayElement.src && overlayElement.src !== '') {
+                    // If we have overlay data, toggle between overlay and raw video
+                    if (showOverlay) {
+                        overlayElement.style.display = 'block';
+                        videoElement.style.display = 'none';
+                        toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
+                        console.log('Switched to overlay view');
+                    } else {
+                        overlayElement.style.display = 'none';
+                        videoElement.style.display = 'block';
+                        toggleOverlayBtn.textContent = 'SHOW OVERLAY';
+                        console.log('Switched to raw video view');
+                    }
                 } else {
-                    overlayElement.style.display = 'none';
-                    videoElement.style.display = 'block';
-                    toggleOverlayBtn.textContent = 'SHOW OVERLAY';
+                    // If no overlay data yet, just update button text
+                    toggleOverlayBtn.textContent = showOverlay ? 'SHOW RAW VIDEO' : 'SHOW OVERLAY';
+                    console.log('No overlay data available, button text updated');
                 }
-            } else {
-                // If no overlay data yet, just update button text
-                toggleOverlayBtn.textContent = showOverlay ? 'SHOW RAW VIDEO' : 'SHOW OVERLAY';
+            } catch (error) {
+                console.error('Error in toggleOverlay:', error);
+                // Reset to safe state
+                showOverlay = true;
+                videoElement.style.display = 'block';
+                overlayElement.style.display = 'none';
+                toggleOverlayBtn.textContent = 'SHOW OVERLAY';
             }
         }
 
