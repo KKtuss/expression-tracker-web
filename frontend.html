@@ -674,11 +674,6 @@
 
 
         async function savePreset() {
-            if (!sessionReady) {
-                updateStatus('Please wait for connection to be ready...', 'error');
-                return;
-            }
-            
             const presetName = presetNameInput.value.trim();
             if (!presetName) {
                 updateStatus('Please enter a preset name', 'error');
@@ -713,11 +708,6 @@
         }
 
         async function loadPreset(presetName) {
-            if (!sessionReady) {
-                updateStatus('Please wait for connection to be ready...', 'error');
-                return;
-            }
-            
             try {
                 const response = await fetch(`${API_BASE_URL}/presets/${encodeURIComponent(presetName)}/load`, {
                     method: 'POST',

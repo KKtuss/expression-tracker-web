@@ -401,13 +401,17 @@ async def save_preset(preset_name: str, request: dict):
         # Get the session_id from request or create a default one
         session_id = request.get("session_id", "default")
         
-        # Get session's image manager
+        # Get session's image manager, create if doesn't exist
         session = manager.detection_sessions.get(session_id)
         if not session:
-            return {
-                "success": False,
-                "error": "Session not found"
-            }
+            # Create a temporary session for preset operations
+            await manager.initialize_session(session_id)
+            session = manager.detection_sessions.get(session_id)
+            if not session:
+                return {
+                    "success": False,
+                    "error": "Failed to create session"
+                }
         
         image_manager = session['image_manager']
         success = image_manager.save_preset(preset_name)
@@ -437,13 +441,17 @@ async def load_preset(preset_name: str, request: dict):
         # Get the session_id from request
         session_id = request.get("session_id", "default")
         
-        # Get session's image manager
+        # Get session's image manager, create if doesn't exist
         session = manager.detection_sessions.get(session_id)
         if not session:
-            return {
-                "success": False,
-                "error": "Session not found"
-            }
+            # Create a temporary session for preset operations
+            await manager.initialize_session(session_id)
+            session = manager.detection_sessions.get(session_id)
+            if not session:
+                return {
+                    "success": False,
+                    "error": "Failed to create session"
+                }
         
         image_manager = session['image_manager']
         success = image_manager.load_preset(preset_name)
@@ -620,3 +628,4 @@ if __name__ == "__main__":
         reload=False,  # Disable reload for production
         log_level="info"
     )
+
