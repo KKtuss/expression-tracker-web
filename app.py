@@ -333,6 +333,60 @@ async def get_active_sessions():
         }
     }
 
+@app.post("/upload_image")
+async def upload_image(request: dict):
+    """Upload image for expression via HTTP"""
+    try:
+        session_id = request.get("session_id", "default")
+        expression_type = request.get("expression_type")
+        image_data = request.get("image_data")
+        
+        if not expression_type or not image_data:
+            return {
+                "success": False,
+                "error": "Missing expression_type or image_data"
+            }
+        
+        # Get or create session
+        session = manager.detection_sessions.get(session_id)
+        if not session:
+            try:
+                expression_detector = ExpressionDetector()
+                image_manager = ImageManager(expression_detector.images)
+                
+                manager.detection_sessions[session_id] = {
+                    'detector': expression_detector,
+                    'image_manager': image_manager,
+                    'frame_count': 0,
+                }
+                session = manager.detection_sessions[session_id]
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Failed to create session: {str(e)}"
+                }
+        
+        image_manager = session['image_manager']
+        success = image_manager.set_image_from_base64(expression_type, image_data)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Image uploaded for {expression_type}"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Failed to upload image for {expression_type}"
+            }
+            
+    except Exception as e:
+        logger.error(f"Upload image error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @app.post("/benchmark")
 async def run_benchmark():
     """Run performance benchmark (for testing instance performance)"""
@@ -449,6 +503,13 @@ async def load_preset(preset_name: str, request: dict):
         # Get the session_id from request
         session_id = request.get("session_id", "default")
         
+        # Check if there's an active WebSocket session and use that instead
+        if session_id not in manager.active_connections:
+            # Try to find any active WebSocket session
+            active_sessions = list(manager.active_connections.keys())
+            if active_sessions:
+                session_id = active_sessions[0]  # Use the first active session
+        
         # Get session's image manager, create if doesn't exist
         session = manager.detection_sessions.get(session_id)
         if not session:
@@ -473,6 +534,17 @@ async def load_preset(preset_name: str, request: dict):
         success = image_manager.load_preset(preset_name)
         
         if success:
+            # If there's an active WebSocket connection, also load the preset there
+            if session_id in manager.active_connections:
+                try:
+                    await manager.send_message(session_id, {
+                        "type": "preset_loaded",
+                        "preset_name": preset_name,
+                        "message": f"Preset '{preset_name}' loaded successfully"
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to notify WebSocket about preset load: {e}")
+            
             return {
                 "success": True,
                 "message": f"Preset '{preset_name}' loaded successfully"

@@ -628,16 +628,42 @@
             try {
                 // Convert file to base64
                 const reader = new FileReader();
-                reader.onload = function() {
+                reader.onload = async function() {
                     const base64Data = reader.result.split(',')[1];
                     
-                    // Send to backend
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({
-                            type: 'upload_image',
-                            expression_type: expression,
-                            image_data: base64Data
-                        }));
+                    try {
+                        // Try WebSocket first, fallback to HTTP
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                                type: 'upload_image',
+                                expression_type: expression,
+                                image_data: base64Data
+                            }));
+                        } else {
+                            // Fallback to HTTP upload
+                            const response = await fetch(`${API_BASE_URL}/upload_image`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    session_id: sessionId,
+                                    expression_type: expression,
+                                    image_data: base64Data
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            if (result.success) {
+                                updateStatus(`Image uploaded for ${expression}`, 'success');
+                                loadExpressions(); // Refresh status
+                            } else {
+                                updateStatus(`Upload failed: ${result.error}`, 'error');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        updateStatus(`Upload failed: ${error.message}`, 'error');
                     }
                 };
                 reader.readAsDataURL(file);
