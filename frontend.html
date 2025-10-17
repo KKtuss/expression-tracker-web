@@ -95,6 +95,14 @@
             background: #000000;
         }
         
+        .overlay-feed {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background: #000000;
+            display: none;
+        }
+        
         .expression-image {
             max-width: 250px;
             max-height: 250px;
@@ -237,10 +245,12 @@
             <div class="camera-section">
                 <div class="section-title">CAMERA FEED</div>
                 <video id="videoElement" class="camera-feed" autoplay muted></video>
+                <img id="overlayElement" class="overlay-feed" alt="Detection Overlay">
                 <div class="controls-row">
                     <button id="startCameraBtn">START CAMERA</button>
                     <button id="startDetectionBtn" disabled>START DETECTION</button>
                     <button id="stopDetectionBtn" disabled>STOP DETECTION</button>
+                    <button id="toggleOverlayBtn" disabled>TOGGLE OVERLAY</button>
                 </div>
                 <div id="statusElement" class="status">Ready</div>
             </div>
@@ -291,9 +301,11 @@
         let processingInterval = null;
         let availableExpressions = [];
         let sessionId = Math.random().toString(36).substr(2, 9);
+        let showOverlay = true; // Default to showing overlay
 
         // DOM elements
         const videoElement = document.getElementById('videoElement');
+        const overlayElement = document.getElementById('overlayElement');
         const expressionImage = document.getElementById('expressionImage');
         const statusElement = document.getElementById('statusElement');
         const expressionStatus = document.getElementById('expressionStatus');
@@ -301,6 +313,7 @@
         const startCameraBtn = document.getElementById('startCameraBtn');
         const startDetectionBtn = document.getElementById('startDetectionBtn');
         const stopDetectionBtn = document.getElementById('stopDetectionBtn');
+        const toggleOverlayBtn = document.getElementById('toggleOverlayBtn');
         const expressionGrid = document.getElementById('expressionGrid');
         const clearImagesBtn = document.getElementById('clearImagesBtn');
         const loadStatus = document.getElementById('loadStatus');
@@ -321,6 +334,7 @@
                 startCameraBtn.addEventListener('click', initializeCamera);
                 startDetectionBtn.addEventListener('click', startDetection);
                 stopDetectionBtn.addEventListener('click', stopDetection);
+                toggleOverlayBtn.addEventListener('click', toggleOverlay);
                 clearImagesBtn.addEventListener('click', clearAllImages);
                 
                 updateStatus('Ready', 'success');
@@ -347,6 +361,7 @@
                 startCameraBtn.textContent = 'CAMERA ACTIVE';
                 startCameraBtn.disabled = true;
                 startDetectionBtn.disabled = false;
+                toggleOverlayBtn.disabled = false;
                 
                 updateStatus('Camera ready', 'success');
             } catch (error) {
@@ -493,6 +508,22 @@
                 expressionImage.style.display = 'none';
             }
             
+            // Update overlay frame with tracking data
+            if (result.frame_with_overlay) {
+                overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
+                // Show overlay or video based on toggle setting
+                if (showOverlay) {
+                    overlayElement.style.display = 'block';
+                    videoElement.style.display = 'none';
+                } else {
+                    overlayElement.style.display = 'none';
+                    videoElement.style.display = 'block';
+                }
+            } else {
+                overlayElement.style.display = 'none';
+                videoElement.style.display = 'block';
+            }
+            
             // Update expression status
             const expression = result.expression || 'None';
             expressionStatus.textContent = expression.toUpperCase();
@@ -628,6 +659,26 @@
                 ws.send(JSON.stringify({
                     type: 'clear_images'
                 }));
+            }
+        }
+
+        function toggleOverlay() {
+            showOverlay = !showOverlay;
+            
+            if (overlayElement.src) {
+                // If we have overlay data, toggle between overlay and raw video
+                if (showOverlay) {
+                    overlayElement.style.display = 'block';
+                    videoElement.style.display = 'none';
+                    toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
+                } else {
+                    overlayElement.style.display = 'none';
+                    videoElement.style.display = 'block';
+                    toggleOverlayBtn.textContent = 'SHOW OVERLAY';
+                }
+            } else {
+                // If no overlay data yet, just update button text
+                toggleOverlayBtn.textContent = showOverlay ? 'SHOW RAW VIDEO' : 'SHOW OVERLAY';
             }
         }
 

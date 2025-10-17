@@ -79,6 +79,14 @@ class ImageManager:
         """Get status of all images (whether they're set or not)"""
         return {key: image is not None for key, image in self.images.items()}
     
+    def get_all_expressions(self) -> List[str]:
+        """Get list of all available expression types"""
+        return list(self.images.keys())
+    
+    def get_loaded_expressions(self) -> Dict[str, bool]:
+        """Get status of all loaded expressions (alias for get_all_images_status)"""
+        return self.get_all_images_status()
+    
     def save_preset(self, preset_name: str) -> bool:
         """Save current image configuration as a preset (same as desktop app)"""
         try:
