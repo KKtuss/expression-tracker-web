@@ -93,16 +93,6 @@
             height: 300px;
             object-fit: cover;
             background: #000000;
-            transform: scaleX(-1); /* Mirror the raw video to match overlay */
-        }
-        
-        .overlay-feed {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            background: #000000;
-            display: none;
-            transform: scaleX(-1); /* Mirror the overlay to match video */
         }
         
         .expression-image {
@@ -247,14 +237,11 @@
             <div class="camera-section">
                 <div class="section-title">CAMERA FEED</div>
                 <video id="videoElement" class="camera-feed" autoplay muted></video>
-                <img id="overlayElement" class="overlay-feed" alt="Detection Overlay">
                 <div class="controls-row">
                     <button id="startCameraBtn">START CAMERA</button>
                     <button id="startDetectionBtn" disabled>START DETECTION</button>
                     <button id="stopDetectionBtn" disabled>STOP DETECTION</button>
-                    <button id="toggleOverlayBtn" disabled>SHOW OVERLAY</button>
                 </div>
-                <div id="viewMode" class="status">View: Raw Video</div>
                 <div id="statusElement" class="status">Ready</div>
             </div>
             
@@ -314,12 +301,10 @@
         let processingInterval = null;
         let availableExpressions = [];
         let sessionId = Math.random().toString(36).substr(2, 9);
-        let showOverlay = true; // Default to showing overlay
         let lastExpressionImage = null; // Keep track of last expression image
 
         // DOM elements
         const videoElement = document.getElementById('videoElement');
-        const overlayElement = document.getElementById('overlayElement');
         const expressionImage = document.getElementById('expressionImage');
         const statusElement = document.getElementById('statusElement');
         const expressionStatus = document.getElementById('expressionStatus');
@@ -327,11 +312,9 @@
         const startCameraBtn = document.getElementById('startCameraBtn');
         const startDetectionBtn = document.getElementById('startDetectionBtn');
         const stopDetectionBtn = document.getElementById('stopDetectionBtn');
-        const toggleOverlayBtn = document.getElementById('toggleOverlayBtn');
         const expressionGrid = document.getElementById('expressionGrid');
         const clearImagesBtn = document.getElementById('clearImagesBtn');
         const loadStatus = document.getElementById('loadStatus');
-        const viewMode = document.getElementById('viewMode');
         const presetNameInput = document.getElementById('presetNameInput');
         const savePresetBtn = document.getElementById('savePresetBtn');
         const presetList = document.getElementById('presetList');
@@ -352,7 +335,6 @@
                 startCameraBtn.addEventListener('click', initializeCamera);
                 startDetectionBtn.addEventListener('click', startDetection);
                 stopDetectionBtn.addEventListener('click', stopDetection);
-                toggleOverlayBtn.addEventListener('click', toggleOverlay);
                 clearImagesBtn.addEventListener('click', clearAllImages);
                 savePresetBtn.addEventListener('click', savePreset);
                 
@@ -380,7 +362,6 @@
                 startCameraBtn.textContent = 'CAMERA ACTIVE';
                 startCameraBtn.disabled = true;
                 startDetectionBtn.disabled = false;
-                toggleOverlayBtn.disabled = false;
                 
                 updateStatus('Camera ready', 'success');
             } catch (error) {
@@ -533,19 +514,6 @@
                 expressionImage.style.display = 'none';
             }
             
-            // Update overlay frame with tracking data
-            if (result.frame_with_overlay) {
-                overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
-                
-                // Update display based on current toggle state
-                if (showOverlay) {
-                    overlayElement.style.display = 'block';
-                    videoElement.style.display = 'none';
-                } else {
-                    overlayElement.style.display = 'none';
-                    videoElement.style.display = 'block';
-                }
-            }
             
             // Update expression status
             const expression = result.expression || 'None';
@@ -700,31 +668,6 @@
             expressionImage.style.display = 'none';
         }
 
-        function toggleOverlay() {
-            showOverlay = !showOverlay;
-            
-            // Update button text and apply display changes immediately
-            if (showOverlay) {
-                toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
-                toggleOverlayBtn.style.backgroundColor = '#00ff00';
-                toggleOverlayBtn.style.color = '#000000';
-                viewMode.textContent = 'View: Overlay with Tracking';
-                // If we have overlay data, show it immediately
-                if (overlayElement.src) {
-                    overlayElement.style.display = 'block';
-                    videoElement.style.display = 'none';
-                }
-            } else {
-                toggleOverlayBtn.textContent = 'SHOW OVERLAY';
-                toggleOverlayBtn.style.backgroundColor = '#000000';
-                toggleOverlayBtn.style.color = '#00ff00';
-                viewMode.textContent = 'View: Raw Video';
-                overlayElement.style.display = 'none';
-                videoElement.style.display = 'block';
-            }
-            
-            console.log('Overlay toggle:', showOverlay ? 'OVERLAY' : 'RAW VIDEO');
-        }
 
         async function savePreset() {
             const presetName = presetNameInput.value.trim();
