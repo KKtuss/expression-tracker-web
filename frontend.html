@@ -93,6 +93,7 @@
             height: 300px;
             object-fit: cover;
             background: #000000;
+            transform: scaleX(-1); /* Mirror the raw video to match overlay */
         }
         
         .overlay-feed {
@@ -303,6 +304,7 @@
         let availableExpressions = [];
         let sessionId = Math.random().toString(36).substr(2, 9);
         let showOverlay = true; // Default to showing overlay
+        let lastExpressionImage = null; // Keep track of last expression image
 
         // DOM elements
         const videoElement = document.getElementById('videoElement');
@@ -503,7 +505,12 @@
         function updateDisplay(result) {
             // Update expression image
             if (result.expression_image) {
-                expressionImage.src = `data:image/jpeg;base64,${result.expression_image}`;
+                lastExpressionImage = `data:image/jpeg;base64,${result.expression_image}`;
+                expressionImage.src = lastExpressionImage;
+                expressionImage.style.display = 'block';
+            } else if (lastExpressionImage) {
+                // Keep showing the last expression image even if no new one is detected
+                expressionImage.src = lastExpressionImage;
                 expressionImage.style.display = 'block';
             } else {
                 expressionImage.style.display = 'none';
@@ -682,6 +689,9 @@
                     type: 'clear_images'
                 }));
             }
+            // Also clear the displayed expression image
+            lastExpressionImage = null;
+            expressionImage.style.display = 'none';
         }
 
         function toggleOverlay() {
