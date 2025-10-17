@@ -327,6 +327,47 @@ async def get_active_sessions():
         }
     }
 
+@app.post("/benchmark")
+async def run_benchmark():
+    """Run performance benchmark (for testing instance performance)"""
+    try:
+        import subprocess
+        import sys
+        import os
+        
+        # Check if benchmark script exists
+        if not os.path.exists("benchmark.py"):
+            return {
+                "success": False,
+                "error": "benchmark.py not found"
+            }
+        
+        # Run benchmark in background
+        result = subprocess.run(
+            [sys.executable, "benchmark.py"],
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+        
+        return {
+            "success": True,
+            "return_code": result.returncode,
+            "stdout": result.stdout,
+            "stderr": result.stderr
+        }
+        
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "error": "Benchmark timed out after 5 minutes"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Benchmark failed: {str(e)}"
+        }
+
 # Frontend HTML (simple test interface)
 @app.get("/test", response_class=HTMLResponse)
 async def test_frontend():
