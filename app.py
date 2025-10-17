@@ -226,13 +226,19 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                         session = manager.detection_sessions.get(session_id)
                         if session:
                             image_manager = session['image_manager']
-                            image_manager.load_image_for_expression(expression_type, image_data)
+                            success = image_manager.set_image_from_base64(expression_type, image_data)
                             
-                            await manager.send_message(session_id, {
-                                "type": "upload_success",
-                                "expression_type": expression_type,
-                                "message": f"Image uploaded for {expression_type}"
-                            })
+                            if success:
+                                await manager.send_message(session_id, {
+                                    "type": "upload_success",
+                                    "expression_type": expression_type,
+                                    "message": f"Image uploaded for {expression_type}"
+                                })
+                            else:
+                                await manager.send_message(session_id, {
+                                    "type": "error",
+                                    "message": f"Failed to upload image for {expression_type}"
+                                })
                         else:
                             await manager.send_message(session_id, {
                                 "type": "error",
