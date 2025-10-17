@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expression Tracker Web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #000000;
+            color: #00ff00;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .right-panel {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .camera-section {
+            background: #000000;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            border-radius: 0;
+        }
+        
+        .image-display {
+            background: #000000;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            border-radius: 0;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .debug-section {
+            background: #000000;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            border-radius: 0;
+            height: 300px;
+            overflow-y: auto;
+        }
+        
+        .controls-section {
+            background: #000000;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            border-radius: 0;
+        }
+        
+        .expression-section {
+            background: #000000;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            border-radius: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        video, img {
+            max-width: 100%;
+            border: 1px solid #00ff00;
+        }
+        
+        .camera-feed {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background: #000000;
+        }
+        
+        .expression-image {
+            max-width: 250px;
+            max-height: 250px;
+            object-fit: contain;
+            background: #000000;
+        }
+        
+        button {
+            background: #000000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #00ff00;
+            color: #000000;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button:disabled:hover {
+            background: #000000;
+            color: #00ff00;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-button {
+            background: #000000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            margin: 2px;
+            transition: all 0.2s;
+        }
+        
+        .file-button:hover {
+            background: #00ff00;
+            color: #000000;
+        }
+        
+        .status {
+            font-size: 12px;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #00ff00;
+            background: #000000;
+        }
+        
+        .status.success {
+            border-color: #00ff00;
+        }
+        
+        .status.error {
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+        
+        .status.warning {
+            border-color: #ffff00;
+            color: #ffff00;
+        }
+        
+        .expression-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #00ff00;
+            margin-bottom: 5px;
+        }
+        
+        .expression-item:last-child {
+            border-bottom: none;
+        }
+        
+        .expression-name {
+            min-width: 100px;
+            font-size: 12px;
+        }
+        
+        .expression-status {
+            font-size: 10px;
+            padding: 2px 5px;
+            border: 1px solid #00ff00;
+            background: #000000;
+        }
+        
+        .debug-info {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .clear-button {
+            background: #000000;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+        }
+        
+        .clear-button:hover {
+            background: #ff0000;
+            color: #000000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel: Camera Feed and Debug -->
+        <div class="left-panel">
+            <!-- Camera Section -->
+            <div class="camera-section">
+                <div class="section-title">CAMERA FEED</div>
+                <video id="videoElement" class="camera-feed" autoplay muted></video>
+                <div class="controls-row">
+                    <button id="startCameraBtn">START CAMERA</button>
+                    <button id="startDetectionBtn" disabled>START DETECTION</button>
+                    <button id="stopDetectionBtn" disabled>STOP DETECTION</button>
+                </div>
+                <div id="statusElement" class="status">Ready</div>
+            </div>
+            
+            <!-- Debug Section -->
+            <div class="debug-section">
+                <div class="section-title">DEBUG INFO</div>
+                <div id="debugInfo" class="debug-info">Waiting for detection...</div>
+            </div>
+        </div>
+        
+        <!-- Right Panel: Image Display and Controls -->
+        <div class="right-panel">
+            <!-- Image Display -->
+            <div class="image-display">
+                <div class="section-title">EXPRESSION IMAGE</div>
+                <img id="expressionImage" class="expression-image" src="" alt="No expression detected">
+                <div id="expressionStatus" class="status">No expression</div>
+            </div>
+            
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <div class="section-title">CONTROLS</div>
+                <div class="controls-row">
+                    <button id="clearImagesBtn" class="clear-button">CLEAR ALL IMAGES</button>
+                </div>
+                <div id="loadStatus" class="status">Ready</div>
+            </div>
+            
+            <!-- Expression Management -->
+            <div class="expression-section">
+                <div class="section-title">EXPRESSION IMAGES</div>
+                <div id="expressionGrid"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://expression-tracker-web.onrender.com';
+        const PROCESS_INTERVAL = 200;
+
+        // Global variables
+        let video = null;
+        let canvas = null;
+        let ws = null;
+        let isProcessing = false;
+        let processingInterval = null;
+        let availableExpressions = [];
+        let sessionId = Math.random().toString(36).substr(2, 9);
+
+        // DOM elements
+        const videoElement = document.getElementById('videoElement');
+        const expressionImage = document.getElementById('expressionImage');
+        const statusElement = document.getElementById('statusElement');
+        const expressionStatus = document.getElementById('expressionStatus');
+        const debugInfo = document.getElementById('debugInfo');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const startDetectionBtn = document.getElementById('startDetectionBtn');
+        const stopDetectionBtn = document.getElementById('stopDetectionBtn');
+        const expressionGrid = document.getElementById('expressionGrid');
+        const clearImagesBtn = document.getElementById('clearImagesBtn');
+        const loadStatus = document.getElementById('loadStatus');
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                updateStatus('Initializing...', 'info');
+                
+                // Create canvas for frame capture
+                canvas = document.createElement('canvas');
+                
+                // Set up event listeners
+                startCameraBtn.addEventListener('click', initializeCamera);
+                startDetectionBtn.addEventListener('click', startDetection);
+                stopDetectionBtn.addEventListener('click', stopDetection);
+                clearImagesBtn.addEventListener('click', clearAllImages);
+                
+                updateStatus('Ready', 'success');
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                updateStatus(`Initialization failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function initializeCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 480 },
+                        height: { ideal: 360 },
+                        frameRate: { ideal: 15 },
+                        facingMode: 'user'
+                    }
+                });
+                
+                videoElement.srcObject = stream;
+                video = videoElement;
+                
+                startCameraBtn.textContent = 'CAMERA ACTIVE';
+                startCameraBtn.disabled = true;
+                startDetectionBtn.disabled = false;
+                
+                updateStatus('Camera ready', 'success');
+            } catch (error) {
+                console.error('Camera error:', error);
+                updateStatus(`Camera error: ${error.message}`, 'error');
+            }
+        }
+
+        async function startDetection() {
+            if (!video || !canvas) {
+                updateStatus('Camera not ready', 'error');
+                return;
+            }
+            
+            try {
+                // Connect to WebSocket
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    ws = new WebSocket(`wss://expression-tracker-web.onrender.com/ws/${sessionId}`);
+                    
+                    ws.onopen = () => {
+                        updateStatus('Connected to backend', 'success');
+                        startProcessing();
+                        loadExpressions();
+                    };
+                    
+                    ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    };
+                    
+                    ws.onclose = () => {
+                        updateStatus('Disconnected from backend', 'error');
+                        stopProcessing();
+                    };
+                    
+                    ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        updateStatus('Connection error', 'error');
+                    };
+                } else {
+                    startProcessing();
+                }
+                
+            } catch (error) {
+                console.error('Detection start error:', error);
+                updateStatus(`Detection start failed: ${error.message}`, 'error');
+            }
+        }
+
+        function startProcessing() {
+            isProcessing = true;
+            startDetectionBtn.disabled = true;
+            stopDetectionBtn.disabled = false;
+            
+            updateStatus('Detection started', 'success');
+            
+            // Start processing frames
+            processingInterval = setInterval(processFrame, PROCESS_INTERVAL);
+            
+            console.log('Detection started');
+        }
+
+        function stopDetection() {
+            isProcessing = false;
+            startDetectionBtn.disabled = false;
+            stopDetectionBtn.disabled = true;
+            
+            if (processingInterval) {
+                clearInterval(processingInterval);
+                processingInterval = null;
+            }
+            
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            
+            updateStatus('Detection stopped', 'info');
+            
+            console.log('Detection stopped');
+        }
+
+        async function processFrame() {
+            if (!video || !canvas || !ws || ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+            
+            try {
+                // Capture frame from video
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d', { alpha: false });
+                
+                // Draw the video frame
+                ctx.drawImage(video, 0, 0);
+                
+                // Convert canvas to base64
+                const frameData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                
+                // Send frame to backend
+                ws.send(JSON.stringify({
+                    type: 'frame',
+                    data: frameData
+                }));
+                
+            } catch (error) {
+                console.error('Frame processing error:', error);
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'detection_result':
+                    updateDisplay(data);
+                    break;
+                case 'expressions':
+                    availableExpressions = data.expressions || [];
+                    createExpressionControls();
+                    loadImageStatus(data.loaded_expressions || {});
+                    break;
+                case 'status':
+                    updateStatus(data.message, 'success');
+                    break;
+                case 'error':
+                    updateStatus(data.message, 'error');
+                    break;
+                case 'upload_success':
+                    updateStatus(data.message, 'success');
+                    loadExpressions(); // Refresh status
+                    break;
+                case 'clear_success':
+                    updateStatus(data.message, 'success');
+                    loadExpressions(); // Refresh status
+                    break;
+            }
+        }
+
+        function updateDisplay(result) {
+            // Update expression image
+            if (result.expression_image) {
+                expressionImage.src = `data:image/jpeg;base64,${result.expression_image}`;
+                expressionImage.style.display = 'block';
+            } else {
+                expressionImage.style.display = 'none';
+            }
+            
+            // Update expression status
+            const expression = result.expression || 'None';
+            expressionStatus.textContent = expression.toUpperCase();
+            
+            // Update debug info
+            if (result.debug) {
+                const debugText = formatDebugInfo(result.debug);
+                debugInfo.textContent = debugText;
+            }
+        }
+
+        function formatDebugInfo(debug) {
+            let info = '';
+            
+            if (debug.face_detected) {
+                info += `FACE: DETECTED\n`;
+                info += `EXPRESSION: ${debug.expression || 'None'}\n`;
+                info += `SMILE: ${debug.smile ? 'YES' : 'NO'}\n`;
+                info += `MOUTH OPEN: ${debug.mouth_open ? 'YES' : 'NO'}\n`;
+                info += `GAZE: ${debug.gaze_direction || 'CENTER'}\n`;
+                
+                if (debug.left_hand_gesture && debug.left_hand_gesture !== 'None') {
+                    info += `LEFT HAND: ${debug.left_hand_gesture.toUpperCase()}\n`;
+                }
+                if (debug.right_hand_gesture && debug.right_hand_gesture !== 'None') {
+                    info += `RIGHT HAND: ${debug.right_hand_gesture.toUpperCase()}\n`;
+                }
+                if (debug.special_hand_gesture && debug.special_hand_gesture !== 'None') {
+                    info += `SPECIAL: ${debug.special_hand_gesture.toUpperCase()}\n`;
+                }
+                
+                if (debug.hand_landmarks && debug.hand_landmarks.length > 0) {
+                    info += `\nHANDS DETECTED: ${debug.hand_landmarks.length}\n`;
+                    debug.hand_landmarks.forEach((hand, i) => {
+                        info += `HAND ${i+1}: ${hand.label} - ${hand.gesture}\n`;
+                    });
+                }
+            } else {
+                info += 'FACE: NOT DETECTED\n';
+                info += 'WAITING FOR CAMERA...';
+            }
+            
+            return info;
+        }
+
+        function createExpressionControls() {
+            expressionGrid.innerHTML = '';
+            
+            availableExpressions.forEach(expression => {
+                const item = document.createElement('div');
+                item.className = 'expression-item';
+                
+                item.innerHTML = `
+                    <span class="expression-name">${formatExpressionName(expression)}</span>
+                    <input type="file" id="file-${expression}" accept="image/*" />
+                    <button class="file-button" onclick="document.getElementById('file-${expression}').click()">CHOOSE</button>
+                    <span id="status-${expression}" class="expression-status">NOT SET</span>
+                `;
+                
+                // Add event listener for file change
+                const fileInput = item.querySelector(`#file-${expression}`);
+                fileInput.addEventListener('change', function() {
+                    uploadImage(expression, this);
+                });
+                
+                expressionGrid.appendChild(item);
+            });
+        }
+
+        function formatExpressionName(expression) {
+            return expression.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function loadImageStatus(loadedExpressions) {
+            Object.keys(loadedExpressions).forEach(expression => {
+                const statusElement = document.getElementById(`status-${expression}`);
+                if (statusElement) {
+                    statusElement.textContent = loadedExpressions[expression] ? 'SET ✓' : 'NOT SET';
+                    statusElement.className = 'expression-status';
+                }
+            });
+        }
+
+        async function uploadImage(expression, input) {
+            const file = input.files[0];
+            if (!file) {
+                return;
+            }
+            
+            try {
+                // Convert file to base64
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const base64Data = reader.result.split(',')[1];
+                    
+                    // Send to backend
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'upload_image',
+                            expression_type: expression,
+                            image_data: base64Data
+                        }));
+                    }
+                };
+                reader.readAsDataURL(file);
+                
+                // Show uploading status
+                const statusElement = document.getElementById(`status-${expression}`);
+                if (statusElement) {
+                    statusElement.textContent = 'UPLOADING...';
+                    statusElement.className = 'expression-status';
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                updateStatus(`Upload failed: ${error.message}`, 'error');
+            }
+            
+            // Clear the input
+            input.value = '';
+        }
+
+        async function loadExpressions() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'get_expressions'
+                }));
+            }
+        }
+
+        async function clearAllImages() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'clear_images'
+                }));
+            }
+        }
+
+        function updateStatus(message, type = 'info') {
+            statusElement.textContent = message.toUpperCase();
+            statusElement.className = `status ${type}`;
+        }
+    </script>
+</body>
+</html>

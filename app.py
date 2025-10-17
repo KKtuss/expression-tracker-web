@@ -160,14 +160,22 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 @app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {
-        "message": "Expression Tracker Web API",
-        "version": "2.0.0",
-        "status": "healthy",
-        "active_sessions": len(manager.active_connections)
-    }
+async def main_app():
+    """Serve the main application"""
+    try:
+        with open("frontend.html", "r") as f:
+            html_content = f.read()
+        return HTMLResponse(html_content)
+    except FileNotFoundError:
+        return {
+            "message": "Expression Tracker Web API",
+            "version": "2.0.0",
+            "status": "healthy",
+            "active_sessions": len(manager.active_connections),
+            "websocket_endpoint": "/ws/{session_id}",
+            "test_page": "/test",
+            "note": "Main frontend not found, serving API info"
+        }
 
 @app.get("/health")
 async def health_check():
