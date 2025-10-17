@@ -288,6 +288,16 @@
                 <div class="section-title">EXPRESSION IMAGES</div>
                 <div id="expressionGrid"></div>
             </div>
+            
+            <!-- Preset Management -->
+            <div class="expression-section">
+                <div class="section-title">PRESET PROFILES</div>
+                <div class="controls-row">
+                    <input type="text" id="presetNameInput" placeholder="Preset name..." style="flex: 1; padding: 8px; background: #000000; color: #00ff00; border: 1px solid #00ff00; margin-right: 5px;">
+                    <button id="savePresetBtn">SAVE</button>
+                </div>
+                <div id="presetList"></div>
+            </div>
         </div>
     </div>
     
@@ -322,6 +332,9 @@
         const clearImagesBtn = document.getElementById('clearImagesBtn');
         const loadStatus = document.getElementById('loadStatus');
         const viewMode = document.getElementById('viewMode');
+        const presetNameInput = document.getElementById('presetNameInput');
+        const savePresetBtn = document.getElementById('savePresetBtn');
+        const presetList = document.getElementById('presetList');
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', async () => {
@@ -341,6 +354,7 @@
                 stopDetectionBtn.addEventListener('click', stopDetection);
                 toggleOverlayBtn.addEventListener('click', toggleOverlay);
                 clearImagesBtn.addEventListener('click', clearAllImages);
+                savePresetBtn.addEventListener('click', savePreset);
                 
                 updateStatus('Ready', 'success');
             } catch (error) {
@@ -390,6 +404,7 @@
                         updateStatus('Connected to backend', 'success');
                         startProcessing();
                         loadExpressions();
+                        loadPresets(); // Load available presets
                     };
                     
                     ws.onmessage = (event) => {
@@ -709,6 +724,136 @@
             }
             
             console.log('Overlay toggle:', showOverlay ? 'OVERLAY' : 'RAW VIDEO');
+        }
+
+        async function savePreset() {
+            const presetName = presetNameInput.value.trim();
+            if (!presetName) {
+                updateStatus('Please enter a preset name', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/presets/${encodeURIComponent(presetName)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus(`Preset '${presetName}' saved successfully`, 'success');
+                    presetNameInput.value = '';
+                    loadPresets(); // Refresh preset list
+                } else {
+                    updateStatus(`Failed to save preset: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Save preset error:', error);
+                updateStatus(`Save failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadPreset(presetName) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/presets/${encodeURIComponent(presetName)}/load`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus(`Preset '${presetName}' loaded successfully`, 'success');
+                    loadImageStatus(); // Refresh image status
+                } else {
+                    updateStatus(`Failed to load preset: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Load preset error:', error);
+                updateStatus(`Load failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function deletePreset(presetName) {
+            if (!confirm(`Are you sure you want to delete preset '${presetName}'?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/presets/${encodeURIComponent(presetName)}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatus(`Preset '${presetName}' deleted successfully`, 'success');
+                    loadPresets(); // Refresh preset list
+                } else {
+                    updateStatus(`Failed to delete preset: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Delete preset error:', error);
+                updateStatus(`Delete failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadPresets() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/presets`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load presets');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayPresets(result.presets);
+                } else {
+                    console.error('Failed to load presets:', result.error);
+                }
+                
+            } catch (error) {
+                console.error('Load presets error:', error);
+            }
+        }
+
+        function displayPresets(presets) {
+            presetList.innerHTML = '';
+            
+            if (presets.length === 0) {
+                presetList.innerHTML = '<div class="status">No presets available</div>';
+                return;
+            }
+            
+            presets.forEach(preset => {
+                const presetItem = document.createElement('div');
+                presetItem.className = 'expression-item';
+                
+                presetItem.innerHTML = `
+                    <span class="expression-name">${preset.name}</span>
+                    <span class="expression-status">${preset.total_images} images</span>
+                    <button class="file-button" onclick="loadPreset('${preset.name}')">LOAD</button>
+                    <button class="file-button clear-button" onclick="deletePreset('${preset.name}')">DELETE</button>
+                `;
+                
+                presetList.appendChild(presetItem);
+            });
         }
 
         function updateStatus(message, type = 'info') {

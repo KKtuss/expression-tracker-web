@@ -374,6 +374,125 @@ async def run_benchmark():
             "error": f"Benchmark failed: {str(e)}"
         }
 
+@app.get("/presets")
+async def get_presets():
+    """Get list of available presets"""
+    try:
+        # Create a temporary ImageManager to access preset methods
+        temp_images = {}
+        temp_manager = ImageManager(temp_images)
+        presets = temp_manager.list_presets()
+        
+        return {
+            "success": True,
+            "presets": presets
+        }
+    except Exception as e:
+        logger.error(f"Error getting presets: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/presets/{preset_name}")
+async def save_preset(preset_name: str, request: dict):
+    """Save current expression images as a preset"""
+    try:
+        # Get the session_id from request or create a default one
+        session_id = request.get("session_id", "default")
+        
+        # Get session's image manager
+        session = manager.detection_sessions.get(session_id)
+        if not session:
+            return {
+                "success": False,
+                "error": "Session not found"
+            }
+        
+        image_manager = session['image_manager']
+        success = image_manager.save_preset(preset_name)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Preset '{preset_name}' saved successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Failed to save preset '{preset_name}'"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error saving preset: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/presets/{preset_name}/load")
+async def load_preset(preset_name: str, request: dict):
+    """Load a preset"""
+    try:
+        # Get the session_id from request
+        session_id = request.get("session_id", "default")
+        
+        # Get session's image manager
+        session = manager.detection_sessions.get(session_id)
+        if not session:
+            return {
+                "success": False,
+                "error": "Session not found"
+            }
+        
+        image_manager = session['image_manager']
+        success = image_manager.load_preset(preset_name)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Preset '{preset_name}' loaded successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Failed to load preset '{preset_name}'"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error loading preset: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.delete("/presets/{preset_name}")
+async def delete_preset(preset_name: str):
+    """Delete a preset"""
+    try:
+        # Create a temporary ImageManager to access preset methods
+        temp_images = {}
+        temp_manager = ImageManager(temp_images)
+        success = temp_manager.delete_preset(preset_name)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Preset '{preset_name}' deleted successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Failed to delete preset '{preset_name}'"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error deleting preset: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 # Frontend HTML (simple test interface)
 @app.get("/test", response_class=HTMLResponse)
 async def test_frontend():
