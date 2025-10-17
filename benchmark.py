@@ -27,29 +27,8 @@ class PerformanceBenchmark:
     def setup_detection_components(self):
         """Initialize detection components (same as production)"""
         try:
-            # Create image storage dictionary
-            images_storage = {
-                'eyes_open': None,
-                'eyes_closed': None,
-                'looking_left': None,
-                'looking_right': None,
-                'looking_center': None,
-                'neutral': None,
-                'smile': None,
-                'mouth_open': None,
-                'one_hand_raised': None,
-                'both_hands_raised': None,
-                'hand_touching_head': None,
-                'thumbs_up': None,
-                'thumbs_down': None,
-                'open_hand': None,
-                'fist': None,
-                'pointing': None
-            }
-            
-            # Initialize components
-            self.image_manager = ImageManager(images_storage)
-            self.detector = ExpressionDetector(self.image_manager)
+            # Initialize detector (no arguments needed)
+            self.detector = ExpressionDetector()
             
             logger.info("Detection components initialized successfully")
             
