@@ -405,12 +405,20 @@ async def save_preset(preset_name: str, request: dict):
         session = manager.detection_sessions.get(session_id)
         if not session:
             # Create a temporary session for preset operations
-            await manager.initialize_session(session_id)
-            session = manager.detection_sessions.get(session_id)
-            if not session:
+            try:
+                expression_detector = ExpressionDetector()
+                image_manager = ImageManager(expression_detector.images)
+                
+                manager.detection_sessions[session_id] = {
+                    'detector': expression_detector,
+                    'image_manager': image_manager,
+                    'frame_count': 0,
+                }
+                session = manager.detection_sessions[session_id]
+            except Exception as e:
                 return {
                     "success": False,
-                    "error": "Failed to create session"
+                    "error": f"Failed to create session: {str(e)}"
                 }
         
         image_manager = session['image_manager']
@@ -445,12 +453,20 @@ async def load_preset(preset_name: str, request: dict):
         session = manager.detection_sessions.get(session_id)
         if not session:
             # Create a temporary session for preset operations
-            await manager.initialize_session(session_id)
-            session = manager.detection_sessions.get(session_id)
-            if not session:
+            try:
+                expression_detector = ExpressionDetector()
+                image_manager = ImageManager(expression_detector.images)
+                
+                manager.detection_sessions[session_id] = {
+                    'detector': expression_detector,
+                    'image_manager': image_manager,
+                    'frame_count': 0,
+                }
+                session = manager.detection_sessions[session_id]
+            except Exception as e:
                 return {
                     "success": False,
-                    "error": "Failed to create session"
+                    "error": f"Failed to create session: {str(e)}"
                 }
         
         image_manager = session['image_manager']
