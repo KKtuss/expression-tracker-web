@@ -518,39 +518,8 @@
             
             // Update overlay frame with tracking data
             if (result.frame_with_overlay) {
-                try {
-                    overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
-                    
-                    // Wait for image to load before switching display
-                    overlayElement.onload = function() {
-                        // Show overlay or video based on toggle setting
-                        if (showOverlay) {
-                            overlayElement.style.display = 'block';
-                            videoElement.style.display = 'none';
-                        } else {
-                            overlayElement.style.display = 'none';
-                            videoElement.style.display = 'block';
-                        }
-                    };
-                    
-                    // If image is already cached and loaded
-                    if (overlayElement.complete) {
-                        if (showOverlay) {
-                            overlayElement.style.display = 'block';
-                            videoElement.style.display = 'none';
-                        } else {
-                            overlayElement.style.display = 'none';
-                            videoElement.style.display = 'block';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error updating overlay:', error);
-                    overlayElement.style.display = 'none';
-                    videoElement.style.display = 'block';
-                }
-            } else {
-                overlayElement.style.display = 'none';
-                videoElement.style.display = 'block';
+                overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
+                // Don't change display here - let the toggle function handle it
             }
             
             // Update expression status
@@ -570,23 +539,35 @@
             if (debug.face_detected) {
                 info += `FACE: DETECTED\n`;
                 info += `EXPRESSION: ${debug.expression || 'None'}\n`;
-                info += `SMILE: ${debug.smile ? 'YES' : 'NO'}\n`;
-                info += `MOUTH OPEN: ${debug.mouth_open ? 'YES' : 'NO'}\n`;
-                info += `GAZE: ${debug.gaze_direction || 'CENTER'}\n`;
                 
-                if (debug.left_hand_gesture && debug.left_hand_gesture !== 'None') {
-                    info += `LEFT HAND: ${debug.left_hand_gesture.toUpperCase()}\n`;
+                // Fix smile detection display
+                const smileDetected = debug.smile_result?.is_smiling || false;
+                info += `SMILE: ${smileDetected ? 'YES' : 'NO'}\n`;
+                
+                // Fix mouth open display
+                const mouthOpen = debug.mouth_result?.is_mouth_open || false;
+                info += `MOUTH OPEN: ${mouthOpen ? 'YES' : 'NO'}\n`;
+                
+                // Fix gaze direction display
+                const gazeDirection = debug.gaze_result?.direction || 'CENTER';
+                info += `GAZE: ${gazeDirection.toUpperCase()}\n`;
+                
+                // Fix hand gesture display
+                const handResult = debug.hand_result || {};
+                if (handResult.left_hand && handResult.left_hand !== 'None') {
+                    info += `LEFT HAND: ${handResult.left_hand.toUpperCase()}\n`;
                 }
-                if (debug.right_hand_gesture && debug.right_hand_gesture !== 'None') {
-                    info += `RIGHT HAND: ${debug.right_hand_gesture.toUpperCase()}\n`;
+                if (handResult.right_hand && handResult.right_hand !== 'None') {
+                    info += `RIGHT HAND: ${handResult.right_hand.toUpperCase()}\n`;
                 }
-                if (debug.special_hand_gesture && debug.special_hand_gesture !== 'None') {
-                    info += `SPECIAL: ${debug.special_hand_gesture.toUpperCase()}\n`;
+                if (handResult.special_gesture && handResult.special_gesture !== 'None') {
+                    info += `SPECIAL: ${handResult.special_gesture.toUpperCase()}\n`;
                 }
                 
-                if (debug.hand_landmarks && debug.hand_landmarks.length > 0) {
-                    info += `\nHANDS DETECTED: ${debug.hand_landmarks.length}\n`;
-                    debug.hand_landmarks.forEach((hand, i) => {
+                // Fix hands data display
+                if (debug.hands_data && debug.hands_data.length > 0) {
+                    info += `\nHANDS DETECTED: ${debug.hands_data.length}\n`;
+                    debug.hands_data.forEach((hand, i) => {
                         info += `HAND ${i+1}: ${hand.label} - ${hand.gesture}\n`;
                     });
                 }
@@ -695,33 +676,16 @@
         }
 
         function toggleOverlay() {
-            try {
-                showOverlay = !showOverlay;
-                
-                if (overlayElement && overlayElement.src && overlayElement.src !== '') {
-                    // If we have overlay data, toggle between overlay and raw video
-                    if (showOverlay) {
-                        overlayElement.style.display = 'block';
-                        videoElement.style.display = 'none';
-                        toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
-                        console.log('Switched to overlay view');
-                    } else {
-                        overlayElement.style.display = 'none';
-                        videoElement.style.display = 'block';
-                        toggleOverlayBtn.textContent = 'SHOW OVERLAY';
-                        console.log('Switched to raw video view');
-                    }
-                } else {
-                    // If no overlay data yet, just update button text
-                    toggleOverlayBtn.textContent = showOverlay ? 'SHOW RAW VIDEO' : 'SHOW OVERLAY';
-                    console.log('No overlay data available, button text updated');
-                }
-            } catch (error) {
-                console.error('Error in toggleOverlay:', error);
-                // Reset to safe state
-                showOverlay = true;
-                videoElement.style.display = 'block';
+            showOverlay = !showOverlay;
+            
+            // Simple toggle without complex checks
+            if (showOverlay) {
+                overlayElement.style.display = 'block';
+                videoElement.style.display = 'none';
+                toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
+            } else {
                 overlayElement.style.display = 'none';
+                videoElement.style.display = 'block';
                 toggleOverlayBtn.textContent = 'SHOW OVERLAY';
             }
         }
