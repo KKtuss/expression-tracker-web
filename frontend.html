@@ -252,8 +252,9 @@
                     <button id="startCameraBtn">START CAMERA</button>
                     <button id="startDetectionBtn" disabled>START DETECTION</button>
                     <button id="stopDetectionBtn" disabled>STOP DETECTION</button>
-                    <button id="toggleOverlayBtn" disabled>TOGGLE OVERLAY</button>
+                    <button id="toggleOverlayBtn" disabled>SHOW OVERLAY</button>
                 </div>
+                <div id="viewMode" class="status">View: Raw Video</div>
                 <div id="statusElement" class="status">Ready</div>
             </div>
             
@@ -320,6 +321,7 @@
         const expressionGrid = document.getElementById('expressionGrid');
         const clearImagesBtn = document.getElementById('clearImagesBtn');
         const loadStatus = document.getElementById('loadStatus');
+        const viewMode = document.getElementById('viewMode');
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', async () => {
@@ -519,7 +521,15 @@
             // Update overlay frame with tracking data
             if (result.frame_with_overlay) {
                 overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
-                // Don't change display here - let the toggle function handle it
+                
+                // Update display based on current toggle state
+                if (showOverlay) {
+                    overlayElement.style.display = 'block';
+                    videoElement.style.display = 'none';
+                } else {
+                    overlayElement.style.display = 'none';
+                    videoElement.style.display = 'block';
+                }
             }
             
             // Update expression status
@@ -678,16 +688,27 @@
         function toggleOverlay() {
             showOverlay = !showOverlay;
             
-            // Simple toggle without complex checks
+            // Update button text and apply display changes immediately
             if (showOverlay) {
-                overlayElement.style.display = 'block';
-                videoElement.style.display = 'none';
                 toggleOverlayBtn.textContent = 'SHOW RAW VIDEO';
+                toggleOverlayBtn.style.backgroundColor = '#00ff00';
+                toggleOverlayBtn.style.color = '#000000';
+                viewMode.textContent = 'View: Overlay with Tracking';
+                // If we have overlay data, show it immediately
+                if (overlayElement.src) {
+                    overlayElement.style.display = 'block';
+                    videoElement.style.display = 'none';
+                }
             } else {
+                toggleOverlayBtn.textContent = 'SHOW OVERLAY';
+                toggleOverlayBtn.style.backgroundColor = '#000000';
+                toggleOverlayBtn.style.color = '#00ff00';
+                viewMode.textContent = 'View: Raw Video';
                 overlayElement.style.display = 'none';
                 videoElement.style.display = 'block';
-                toggleOverlayBtn.textContent = 'SHOW OVERLAY';
             }
+            
+            console.log('Overlay toggle:', showOverlay ? 'OVERLAY' : 'RAW VIDEO');
         }
 
         function updateStatus(message, type = 'info') {
