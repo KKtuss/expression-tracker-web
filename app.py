@@ -375,7 +375,7 @@ async def test_frontend():
             
             document.getElementById('startDetection').onclick = () => {
                 if (!ws) {
-                    ws = new WebSocket(`ws://localhost:8001/ws/${sessionId}`);
+                    ws = new WebSocket(`wss://expression-tracker-web.onrender.com/ws/${sessionId}`);
                     ws.onopen = () => {
                         document.getElementById('status').textContent = 'Connected to WebSocket';
                         startProcessing();
