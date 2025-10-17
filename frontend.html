@@ -394,7 +394,7 @@
                     
                     ws.onclose = () => {
                         updateStatus('Disconnected from backend', 'error');
-                        stopProcessing();
+                        stopDetection();
                     };
                     
                     ws.onerror = (error) => {
