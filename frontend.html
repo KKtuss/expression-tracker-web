@@ -292,7 +292,7 @@
     <script>
         // Configuration
         const API_BASE_URL = 'https://expression-tracker-web.onrender.com';
-        const PROCESS_INTERVAL = 50; // Faster response time
+        const PROCESS_INTERVAL = 200;
 
         // Global variables
         let video = null;
@@ -303,8 +303,6 @@
         let availableExpressions = [];
         let sessionId = Math.random().toString(36).substr(2, 9);
         let lastExpressionImage = null; // Keep track of last expression image
-        let isSessionReady = false; // Track if WebSocket session is ready
-        let sessionReady = false; // Track if session is fully ready
 
         // DOM elements
         const videoElement = document.getElementById('videoElement');
@@ -386,7 +384,6 @@
                     
                     ws.onopen = () => {
                         updateStatus('Connected to backend', 'success');
-                        sessionReady = true; // Mark session as ready
                         startProcessing();
                         loadExpressions();
                         loadPresets(); // Load available presets
@@ -605,11 +602,6 @@
         }
 
         function loadImageStatus(loadedExpressions) {
-            if (!loadedExpressions || typeof loadedExpressions !== 'object') {
-                console.warn('loadImageStatus called with invalid data:', loadedExpressions);
-                return;
-            }
-            
             Object.keys(loadedExpressions).forEach(expression => {
                 const statusElement = document.getElementById(`status-${expression}`);
                 if (statusElement) {
@@ -628,42 +620,16 @@
             try {
                 // Convert file to base64
                 const reader = new FileReader();
-                reader.onload = async function() {
+                reader.onload = function() {
                     const base64Data = reader.result.split(',')[1];
                     
-                    try {
-                        // Try WebSocket first, fallback to HTTP
-                        if (ws && ws.readyState === WebSocket.OPEN) {
-                            ws.send(JSON.stringify({
-                                type: 'upload_image',
-                                expression_type: expression,
-                                image_data: base64Data
-                            }));
-                        } else {
-                            // Fallback to HTTP upload
-                            const response = await fetch(`${API_BASE_URL}/upload_image`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    session_id: sessionId,
-                                    expression_type: expression,
-                                    image_data: base64Data
-                                })
-                            });
-                            
-                            const result = await response.json();
-                            if (result.success) {
-                                updateStatus(`Image uploaded for ${expression}`, 'success');
-                                loadExpressions(); // Refresh status
-                            } else {
-                                updateStatus(`Upload failed: ${result.error}`, 'error');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Upload error:', error);
-                        updateStatus(`Upload failed: ${error.message}`, 'error');
+                    // Send to backend
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'upload_image',
+                            expression_type: expression,
+                            image_data: base64Data
+                        }));
                     }
                 };
                 reader.readAsDataURL(file);
@@ -754,7 +720,7 @@
                 
                 if (result.success) {
                     updateStatus(`Preset '${presetName}' loaded successfully`, 'success');
-                    loadExpressions(); // Refresh image status
+                    loadImageStatus(); // Refresh image status
                 } else {
                     updateStatus(`Failed to load preset: ${result.error}`, 'error');
                 }
@@ -841,6 +807,3 @@
     </script>
 </body>
 </html>
-
-
-
