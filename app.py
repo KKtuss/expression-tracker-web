@@ -347,24 +347,20 @@ async def upload_image(request: dict):
                 "error": "Missing expression_type or image_data"
             }
         
-        # Get or create session
+        # Check if there's an active WebSocket session and use that instead
+        if session_id not in manager.active_connections:
+            # Try to find any active WebSocket session
+            active_sessions = list(manager.active_connections.keys())
+            if active_sessions:
+                session_id = active_sessions[0]  # Use the first active session
+        
+        # Get existing session
         session = manager.detection_sessions.get(session_id)
         if not session:
-            try:
-                expression_detector = ExpressionDetector()
-                image_manager = ImageManager(expression_detector.images)
-                
-                manager.detection_sessions[session_id] = {
-                    'detector': expression_detector,
-                    'image_manager': image_manager,
-                    'frame_count': 0,
-                }
-                session = manager.detection_sessions[session_id]
-            except Exception as e:
-                return {
-                    "success": False,
-                    "error": f"Failed to create session: {str(e)}"
-                }
+            return {
+                "success": False,
+                "error": "No active detection session found. Please start detection first."
+            }
         
         image_manager = session['image_manager']
         success = image_manager.set_image_from_base64(expression_type, image_data)
@@ -455,25 +451,20 @@ async def save_preset(preset_name: str, request: dict):
         # Get the session_id from request or create a default one
         session_id = request.get("session_id", "default")
         
-        # Get session's image manager, create if doesn't exist
+        # Check if there's an active WebSocket session and use that instead
+        if session_id not in manager.active_connections:
+            # Try to find any active WebSocket session
+            active_sessions = list(manager.active_connections.keys())
+            if active_sessions:
+                session_id = active_sessions[0]  # Use the first active session
+        
+        # Get session's image manager
         session = manager.detection_sessions.get(session_id)
         if not session:
-            # Create a temporary session for preset operations
-            try:
-                expression_detector = ExpressionDetector()
-                image_manager = ImageManager(expression_detector.images)
-                
-                manager.detection_sessions[session_id] = {
-                    'detector': expression_detector,
-                    'image_manager': image_manager,
-                    'frame_count': 0,
-                }
-                session = manager.detection_sessions[session_id]
-            except Exception as e:
-                return {
-                    "success": False,
-                    "error": f"Failed to create session: {str(e)}"
-                }
+            return {
+                "success": False,
+                "error": "No active detection session found. Please start detection first."
+            }
         
         image_manager = session['image_manager']
         success = image_manager.save_preset(preset_name)
@@ -510,25 +501,13 @@ async def load_preset(preset_name: str, request: dict):
             if active_sessions:
                 session_id = active_sessions[0]  # Use the first active session
         
-        # Get session's image manager, create if doesn't exist
+        # Get session's image manager
         session = manager.detection_sessions.get(session_id)
         if not session:
-            # Create a temporary session for preset operations
-            try:
-                expression_detector = ExpressionDetector()
-                image_manager = ImageManager(expression_detector.images)
-                
-                manager.detection_sessions[session_id] = {
-                    'detector': expression_detector,
-                    'image_manager': image_manager,
-                    'frame_count': 0,
-                }
-                session = manager.detection_sessions[session_id]
-            except Exception as e:
-                return {
-                    "success": False,
-                    "error": f"Failed to create session: {str(e)}"
-                }
+            return {
+                "success": False,
+                "error": "No active detection session found. Please start detection first."
+            }
         
         image_manager = session['image_manager']
         success = image_manager.load_preset(preset_name)
