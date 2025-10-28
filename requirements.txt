@@ -18,20 +18,5 @@ gunicorn==21.2.0
 # Performance monitoring
 psutil>=5.9.0
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Additional system dependencies for mediapipe
+protobuf>=3.20.0
