@@ -124,8 +124,8 @@ class ConnectionManager:
             if frame is None:
                 return {"type": "error", "message": "Could not decode frame"}
             
-            # Process frame using exact original detection logic
-            detection_result = detector.process_frame(frame)
+            # Process frame using optimized detection logic
+            detection_result = detector.process_frame_fast(frame)
             
             # Get current expression image
             current_expression = detection_result.get("expression")
@@ -394,6 +394,68 @@ async def get_presets():
             "error": str(e)
         }
 
+@app.get("/loaded_expressions")
+async def get_loaded_expressions(session_id: str = "default"):
+    """Get current loaded expressions status"""
+    try:
+        session = manager.detection_sessions.get(session_id)
+        
+        if session:
+            image_manager = session['image_manager']
+            loaded_expressions = image_manager.get_loaded_expressions()
+            return {
+                "success": True,
+                "loaded_expressions": loaded_expressions
+            }
+        else:
+            return {
+                "success": True,
+                "loaded_expressions": {}
+            }
+    except Exception as e:
+        logger.error(f"Error getting loaded expressions: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.get("/performance")
+async def get_performance_stats(session_id: str = "default"):
+    """Get performance statistics for a session"""
+    try:
+        session = manager.detection_sessions.get(session_id)
+        
+        if session:
+            detector = session['detector']
+            
+            # Get performance stats from optimized detector
+            if hasattr(detector, 'optimized_detector') and detector.optimized_detector:
+                stats = detector.optimized_detector.get_performance_stats()
+                return {
+                    "success": True,
+                    "performance": stats,
+                    "using_optimized": detector.use_optimized_detector,
+                    "session_id": session_id
+                }
+            else:
+                return {
+                    "success": True,
+                    "performance": {"avg_frame_time_ms": 0, "fps": 0, "performance_status": "unknown"},
+                    "using_optimized": False,
+                    "session_id": session_id
+                }
+        else:
+            return {
+                "success": False,
+                "error": "Session not found"
+            }
+    except Exception as e:
+        logger.error(f"Error getting performance stats: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @app.post("/presets/{preset_name}")
 async def save_preset(preset_name: str, request: dict):
     """Save current expression images as a preset"""
@@ -620,3 +682,5 @@ if __name__ == "__main__":
         reload=False,  # Disable reload for production
         log_level="info"
     )
+
+

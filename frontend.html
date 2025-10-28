@@ -20,66 +20,133 @@
         
         .container {
             display: flex;
+            flex-direction: column;
             height: 100vh;
-            gap: 20px;
-            padding: 20px;
+            gap: 15px;
+            padding: 15px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        .top-panels {
+            display: flex;
+            gap: 15px;
+            flex: 2;
+            min-height: 0;
+        }
+        
+        .bottom-panels {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            min-height: 0;
         }
         
         .left-panel {
-            flex: 1;
+            flex: 1.3;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
+            min-width: 0;
         }
         
         .right-panel {
-            width: 300px;
+            flex: 0.7;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
+            min-width: 0;
         }
         
         .camera-section {
             background: #000000;
             border: 1px solid #00ff00;
-            padding: 20px;
+            padding: 15px;
             border-radius: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            min-height: 0;
+            align-items: flex-start;
+        }
+        
+        .camera-feed-container {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            max-width: 60%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+        
+        .camera-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .overlay-feed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .camera-debug {
+            flex: 1;
+            overflow-y: auto;
+            min-width: 200px;
         }
         
         .image-display {
             background: #000000;
             border: 1px solid #00ff00;
-            padding: 20px;
+            padding: 15px;
             border-radius: 0;
-            height: 400px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-height: 0;
         }
         
         .debug-section {
             background: #000000;
             border: 1px solid #00ff00;
-            padding: 20px;
+            padding: 15px;
             border-radius: 0;
-            height: 300px;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
         }
         
         .controls-section {
             background: #000000;
             border: 1px solid #00ff00;
-            padding: 20px;
+            padding: 15px;
             border-radius: 0;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
         }
         
         .expression-section {
             background: #000000;
             border: 1px solid #00ff00;
-            padding: 20px;
+            padding: 15px;
             border-radius: 0;
-            max-height: 400px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
             overflow-y: auto;
         }
         
@@ -89,16 +156,21 @@
         }
         
         .camera-feed {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
             background: #000000;
             transform: scaleX(-1); /* Mirror the camera feed */
+            border: 1px solid #00ff00;
         }
         
         .expression-image {
-            max-width: 250px;
-            max-height: 250px;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
             background: #000000;
         }
@@ -173,6 +245,17 @@
             color: #ffff00;
         }
         
+        .category-header {
+            background: #00ff00;
+            color: #000000;
+            padding: 8px 12px;
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 3px;
+            text-align: center;
+        }
+        
         .expression-item {
             display: flex;
             align-items: center;
@@ -210,6 +293,24 @@
             margin-bottom: 10px;
             border-bottom: 1px solid #00ff00;
             padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .filter-toggle {
+            background: #00ff00;
+            color: #000000;
+            border: none;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        
+        .filter-toggle:hover {
+            background: #00cc00;
         }
         
         .controls-row {
@@ -232,67 +333,85 @@
 </head>
 <body>
     <div class="container">
-        <!-- Left Panel: Camera Feed and Debug -->
-        <div class="left-panel">
-            <!-- Camera Section -->
-            <div class="camera-section">
-                <div class="section-title">CAMERA FEED</div>
-                <video id="videoElement" class="camera-feed" autoplay muted></video>
-                <div class="controls-row">
-                    <button id="startCameraBtn">START CAMERA</button>
-                    <button id="startDetectionBtn" disabled>START DETECTION</button>
-                    <button id="stopDetectionBtn" disabled>STOP DETECTION</button>
+        <!-- Top Panels: Camera (left) + Image Display (right) -->
+        <div class="top-panels">
+            <!-- Left Panel: Camera Feed with Debug -->
+            <div class="left-panel">
+                <!-- Camera Section -->
+                <div class="camera-section">
+                <div class="camera-feed-container">
+                    <div class="section-title">CAMERA FEED</div>
+                    <div class="camera-wrapper">
+                        <video id="videoElement" class="camera-feed" autoplay muted></video>
+                        <img id="overlayElement" class="overlay-feed" src="" alt="Detection overlay">
+                    </div>
+                    <div class="controls-row">
+                        <button id="startCameraBtn">START CAMERA</button>
+                        <button id="startDetectionBtn" disabled>START DETECTION</button>
+                        <button id="stopDetectionBtn" disabled>STOP DETECTION</button>
+                        <button id="toggleOverlayBtn">SHOW OVERLAY</button>
+                    </div>
+                    <div id="statusElement" class="status">Ready</div>
+                    <div id="viewMode" class="status">Raw Camera</div>
                 </div>
-                <div id="statusElement" class="status">Ready</div>
+                    
+                    <!-- Debug Section -->
+                    <div class="camera-debug">
+                        <div class="section-title">DEBUG INFO</div>
+                        <div id="debugInfo" class="debug-info">Waiting for detection...</div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Debug Section -->
-            <div class="debug-section">
-                <div class="section-title">DEBUG INFO</div>
-                <div id="debugInfo" class="debug-info">Waiting for detection...</div>
+            <!-- Right Panel: Image Display Only -->
+            <div class="right-panel">
+                <!-- Image Display -->
+                <div class="image-display">
+                    <img id="expressionImage" class="expression-image" src="" alt="No expression detected">
+                </div>
             </div>
         </div>
         
-        <!-- Right Panel: Image Display and Controls -->
-        <div class="right-panel">
-            <!-- Image Display -->
-            <div class="image-display">
-                <div class="section-title">EXPRESSION IMAGE</div>
-                <img id="expressionImage" class="expression-image" src="" alt="No expression detected">
-                <div id="expressionStatus" class="status">No expression</div>
-            </div>
-            
-            <!-- Controls Section -->
-            <div class="controls-section">
-                <div class="section-title">CONTROLS</div>
-                <div class="controls-row">
-                    <button id="clearImagesBtn" class="clear-button">CLEAR ALL IMAGES</button>
+        <!-- Bottom Panels: Expression Images (left) + Presets/Controls (right) -->
+        <div class="bottom-panels">
+            <!-- Left Panel: Expression Images Management -->
+            <div class="left-panel">
+                <div class="expression-section">
+                    <div class="section-title">
+                        EXPRESSION IMAGES
+                        <button id="toggleFilter" class="filter-toggle" onclick="toggleExpressionFilter()">SHOW ALL</button>
+                    </div>
+                    <div id="expressionGrid"></div>
                 </div>
-                <div id="loadStatus" class="status">Ready</div>
             </div>
             
-            <!-- Expression Management -->
-            <div class="expression-section">
-                <div class="section-title">EXPRESSION IMAGES</div>
-                <div id="expressionGrid"></div>
-            </div>
-            
-            <!-- Preset Management -->
-            <div class="expression-section">
-                <div class="section-title">PRESET PROFILES</div>
-                <div class="controls-row">
-                    <input type="text" id="presetNameInput" placeholder="Preset name..." style="flex: 1; padding: 8px; background: #000000; color: #00ff00; border: 1px solid #00ff00; margin-right: 5px;">
-                    <button id="savePresetBtn">SAVE</button>
+            <!-- Right Panel: Presets + Controls -->
+            <div class="right-panel">
+                <div class="expression-section">
+                    <div class="section-title">PRESET PROFILES</div>
+                    <div class="controls-row">
+                        <input type="text" id="presetNameInput" placeholder="Preset name..." style="flex: 1; padding: 8px; background: #000000; color: #00ff00; border: 1px solid #00ff00; margin-right: 5px;">
+                        <button id="savePresetBtn">SAVE</button>
+                    </div>
+                    <div id="presetList"></div>
                 </div>
-                <div id="presetList"></div>
+                
+                <div class="controls-section">
+                    <div class="section-title">CONTROLS</div>
+                    <div class="controls-row">
+                        <button id="clearImagesBtn" class="clear-button">CLEAR ALL IMAGES</button>
+                    </div>
+                    <div id="loadStatus" class="status">Ready</div>
+                </div>
             </div>
         </div>
     </div>
     
     <script>
         // Configuration
-        const API_BASE_URL = 'https://expression-tracker-web.onrender.com';
-        const PROCESS_INTERVAL = 200;
+        const API_BASE_URL = 'http://localhost:8001';
+        const WS_BASE_URL = 'ws://localhost:8001';
+        const PROCESS_INTERVAL = 100;
 
         // Global variables
         let video = null;
@@ -303,12 +422,15 @@
         let availableExpressions = [];
         let sessionId = Math.random().toString(36).substr(2, 9);
         let lastExpressionImage = null; // Keep track of last expression image
+        let showOnlyLoadedExpressions = false;
+        let showOverlay = false; // Track overlay visibility
+        let currentLoadedExpressions = null; // Store current loaded expressions data
 
         // DOM elements
         const videoElement = document.getElementById('videoElement');
         const expressionImage = document.getElementById('expressionImage');
         const statusElement = document.getElementById('statusElement');
-        const expressionStatus = document.getElementById('expressionStatus');
+        // const expressionStatus = document.getElementById('expressionStatus'); // Element doesn't exist
         const debugInfo = document.getElementById('debugInfo');
         const startCameraBtn = document.getElementById('startCameraBtn');
         const startDetectionBtn = document.getElementById('startDetectionBtn');
@@ -319,6 +441,9 @@
         const presetNameInput = document.getElementById('presetNameInput');
         const savePresetBtn = document.getElementById('savePresetBtn');
         const presetList = document.getElementById('presetList');
+        const overlayElement = document.getElementById('overlayElement');
+        const toggleOverlayBtn = document.getElementById('toggleOverlayBtn');
+        const viewMode = document.getElementById('viewMode');
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', async () => {
@@ -338,6 +463,7 @@
                 stopDetectionBtn.addEventListener('click', stopDetection);
                 clearImagesBtn.addEventListener('click', clearAllImages);
                 savePresetBtn.addEventListener('click', savePreset);
+                toggleOverlayBtn.addEventListener('click', toggleOverlay);
                 
                 updateStatus('Ready', 'success');
             } catch (error) {
@@ -380,10 +506,11 @@
             try {
                 // Connect to WebSocket
                 if (!ws || ws.readyState !== WebSocket.OPEN) {
-                    ws = new WebSocket(`wss://expression-tracker-web.onrender.com/ws/${sessionId}`);
+                    ws = new WebSocket(`${WS_BASE_URL}/ws/${sessionId}`);
                     
                     ws.onopen = () => {
                         updateStatus('Connected to backend', 'success');
+                        debugInfo.textContent = 'Detection starting...\nWaiting for results...';
                         startProcessing();
                         loadExpressions();
                         loadPresets(); // Load available presets
@@ -515,24 +642,39 @@
                 expressionImage.style.display = 'none';
             }
             
+            // Update overlay if available and overlay is enabled
+            if (showOverlay && result.frame_with_overlay) {
+                overlayElement.src = `data:image/jpeg;base64,${result.frame_with_overlay}`;
+            }
             
-            // Update expression status
-            const expression = result.expression || 'None';
-            expressionStatus.textContent = expression.toUpperCase();
+            // Get expression for debug info - use detected expression from debug data if available
+            const expression = (result.debug && result.debug.detected_expression) || result.expression || 'None';
             
-            // Update debug info
-            if (result.debug) {
-                const debugText = formatDebugInfo(result.debug);
+            // Update debug info - always show something useful
+            console.log('Full result:', result); // Debug logging
+            console.log('Debug data:', result.debug); // Debug logging
+            
+            if (result.debug && result.debug.face_detected !== undefined) {
+                const debugText = formatDebugInfo(result.debug, expression);
                 debugInfo.textContent = debugText;
+            } else {
+                // Show what we have available
+                let info = `EXPRESSION: ${expression.toUpperCase()}\n`;
+                info += `STATUS: Detection active\n`;
+                info += `DEBUG DATA: ${result.debug ? 'Present' : 'Missing'}\n`;
+                if (result.success !== undefined) {
+                    info += `SUCCESS: ${result.success ? 'YES' : 'NO'}\n`;
+                }
+                debugInfo.textContent = info;
             }
         }
 
-        function formatDebugInfo(debug) {
+        function formatDebugInfo(debug, currentExpression) {
             let info = '';
             
             if (debug.face_detected) {
                 info += `FACE: DETECTED\n`;
-                info += `EXPRESSION: ${debug.expression || 'None'}\n`;
+                info += `EXPRESSION: ${currentExpression || 'None'}\n`;
                 
                 // Fix smile detection display
                 const smileDetected = debug.smile_result?.is_smiling || false;
@@ -573,35 +715,168 @@
             return info;
         }
 
-        function createExpressionControls() {
+        function createExpressionControls(loadedExpressions = null) {
             expressionGrid.innerHTML = '';
             
-            availableExpressions.forEach(expression => {
-                const item = document.createElement('div');
-                item.className = 'expression-item';
+            // If loadedExpressions is provided, filter to only show expressions with images
+            let expressionsToShow = availableExpressions;
+            if (loadedExpressions && typeof loadedExpressions === 'object') {
+                expressionsToShow = availableExpressions.filter(expression => loadedExpressions[expression] === true);
+            }
+            
+            // Define expression categories and their order
+            const expressionCategories = {
+                'FACIAL EXPRESSIONS': [
+                    'smiling',
+                    'shocked'
+                ],
+                'EYE EXPRESSIONS': [
+                    'eyes_open',
+                    'eyes_closed',
+                    'eyes_closed_smiling',
+                    'eyes_open_smiling',
+                    'eyes_closed_neutral'
+                ],
+                'GAZE DIRECTIONS': [
+                    'looking_left',
+                    'looking_right',
+                    'looking_center',
+                    'looking_left_smiling',
+                    'looking_right_smiling',
+                    'looking_center_smiling'
+                ],
+                'HAND GESTURES': [
+                    'thumbs_up',
+                    'thumbs_down',
+                    'open_hand',
+                    'fist',
+                    'pointing',
+                    'one_finger_raised',
+                    'one_finger_middle',
+                    'one_finger_ring',
+                    'one_finger_pinky'
+                ],
+                'SPECIAL HAND POSITIONS': [
+                    'one_hand_raised',
+                    'both_hands_raised',
+                    'hand_touching_head',
+                    'both_hands_thumbs_up',
+                    'both_hands_fists'
+                ]
+            };
+            
+            // Create sections for each category
+            Object.entries(expressionCategories).forEach(([categoryName, expressions]) => {
+                // Filter expressions for this category that should be shown
+                const categoryExpressions = expressions.filter(expression => expressionsToShow.includes(expression));
                 
-                item.innerHTML = `
-                    <span class="expression-name">${formatExpressionName(expression)}</span>
-                    <input type="file" id="file-${expression}" accept="image/*" />
-                    <button class="file-button" onclick="document.getElementById('file-${expression}').click()">CHOOSE</button>
-                    <span id="status-${expression}" class="expression-status">NOT SET</span>
-                `;
-                
-                // Add event listener for file change
-                const fileInput = item.querySelector(`#file-${expression}`);
-                fileInput.addEventListener('change', function() {
-                    uploadImage(expression, this);
-                });
-                
-                expressionGrid.appendChild(item);
+                if (categoryExpressions.length > 0) {
+                    // Create category header
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.className = 'category-header';
+                    categoryHeader.textContent = categoryName;
+                    expressionGrid.appendChild(categoryHeader);
+                    
+                    // Add expressions from this category
+                    categoryExpressions.forEach(expression => {
+                        const item = document.createElement('div');
+                        item.className = 'expression-item';
+                        
+                        item.innerHTML = `
+                            <span class="expression-name">${formatExpressionName(expression)}</span>
+                            <input type="file" id="file-${expression}" accept="image/*" />
+                            <button class="file-button" onclick="document.getElementById('file-${expression}').click()">CHOOSE</button>
+                            <span id="status-${expression}" class="expression-status">NOT SET</span>
+                        `;
+                        
+                        // Add event listener for file change
+                        const fileInput = item.querySelector(`#file-${expression}`);
+                        fileInput.addEventListener('change', function() {
+                            uploadImage(expression, this);
+                        });
+                        
+                        expressionGrid.appendChild(item);
+                    });
+                }
             });
+            
+            // Add any remaining expressions not in categories
+            const categorizedExpressions = Object.values(expressionCategories).flat();
+            const uncategorizedExpressions = expressionsToShow.filter(expr => !categorizedExpressions.includes(expr));
+            
+            if (uncategorizedExpressions.length > 0) {
+                const categoryHeader = document.createElement('div');
+                categoryHeader.className = 'category-header';
+                categoryHeader.textContent = 'OTHER EXPRESSIONS';
+                expressionGrid.appendChild(categoryHeader);
+                
+                uncategorizedExpressions.forEach(expression => {
+                    const item = document.createElement('div');
+                    item.className = 'expression-item';
+                    
+                    item.innerHTML = `
+                        <span class="expression-name">${formatExpressionName(expression)}</span>
+                        <input type="file" id="file-${expression}" accept="image/*" />
+                        <button class="file-button" onclick="document.getElementById('file-${expression}').click()">CHOOSE</button>
+                        <span id="status-${expression}" class="expression-status">NOT SET</span>
+                    `;
+                    
+                    // Add event listener for file change
+                    const fileInput = item.querySelector(`#file-${expression}`);
+                    fileInput.addEventListener('change', function() {
+                        uploadImage(expression, this);
+                    });
+                    
+                    expressionGrid.appendChild(item);
+                });
+            }
         }
 
         function formatExpressionName(expression) {
             return expression.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         }
 
+        async function fetchLoadedExpressions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/loaded_expressions?session_id=${sessionId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Store the loaded expressions data
+                        currentLoadedExpressions = data.loaded_expressions || {};
+                        loadImageStatus(currentLoadedExpressions);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch loaded expressions:', error);
+            }
+        }
+
         function loadImageStatus(loadedExpressions) {
+            // If no loadedExpressions provided, fetch from server
+            if (!loadedExpressions) {
+                fetchLoadedExpressions();
+                return;
+            }
+            
+            // Safety check for loadedExpressions
+            if (!loadedExpressions || typeof loadedExpressions !== 'object') {
+                console.warn('Invalid loadedExpressions data:', loadedExpressions);
+                return;
+            }
+            
+            console.log('loadImageStatus called with:', JSON.stringify(loadedExpressions, null, 2));
+            
+            // Store the loaded expressions data for use in toggle
+            currentLoadedExpressions = loadedExpressions;
+            
+            // Recreate expression controls with filtered expressions (only show those with images)
+            if (showOnlyLoadedExpressions) {
+                createExpressionControls(loadedExpressions);
+            } else {
+                createExpressionControls();
+            }
+            
             Object.keys(loadedExpressions).forEach(expression => {
                 const statusElement = document.getElementById(`status-${expression}`);
                 if (statusElement) {
@@ -609,6 +884,57 @@
                     statusElement.className = 'expression-status';
                 }
             });
+        }
+        
+        function toggleExpressionFilter() {
+            showOnlyLoadedExpressions = !showOnlyLoadedExpressions;
+            const toggleButton = document.getElementById('toggleFilter');
+            
+            console.log('Toggle filter - showOnlyLoadedExpressions:', showOnlyLoadedExpressions);
+            console.log('Current loaded expressions:', JSON.stringify(currentLoadedExpressions, null, 2));
+            
+            if (showOnlyLoadedExpressions) {
+                toggleButton.textContent = 'SHOW ALL';
+                // Show only expressions with images using stored data
+                if (currentLoadedExpressions) {
+                    // Filter to only show expressions that have images assigned
+                    const filteredExpressions = {};
+                    Object.keys(currentLoadedExpressions).forEach(expression => {
+                        console.log(`Expression ${expression}: ${currentLoadedExpressions[expression]}`);
+                        if (currentLoadedExpressions[expression]) {
+                            filteredExpressions[expression] = currentLoadedExpressions[expression];
+                        }
+                    });
+                    console.log('Filtered expressions:', JSON.stringify(filteredExpressions, null, 2));
+                    createExpressionControls(filteredExpressions);
+                    // Update status for visible expressions
+                    Object.keys(filteredExpressions).forEach(expression => {
+                        const statusElement = document.getElementById(`status-${expression}`);
+                        if (statusElement) {
+                            statusElement.textContent = 'SET ✓';
+                            statusElement.className = 'expression-status';
+                        }
+                    });
+                } else {
+                    console.log('No currentLoadedExpressions, fetching from server');
+                    // Fallback: fetch from server
+                    fetchLoadedExpressions();
+                }
+            } else {
+                toggleButton.textContent = 'FILTERED';
+                // Show all expressions
+                createExpressionControls();
+                // Update status for all expressions if we have data
+                if (currentLoadedExpressions) {
+                    Object.keys(currentLoadedExpressions).forEach(expression => {
+                        const statusElement = document.getElementById(`status-${expression}`);
+                        if (statusElement) {
+                            statusElement.textContent = currentLoadedExpressions[expression] ? 'SET ✓' : 'NOT SET';
+                            statusElement.className = 'expression-status';
+                        }
+                    });
+                }
+            }
         }
 
         async function uploadImage(expression, input) {
@@ -720,6 +1046,12 @@
                 
                 if (result.success) {
                     updateStatus(`Preset '${presetName}' loaded successfully`, 'success');
+                    
+                    // Enable filtered view when loading a preset
+                    showOnlyLoadedExpressions = true;
+                    const toggleButton = document.getElementById('toggleFilter');
+                    toggleButton.textContent = 'SHOW ALL';
+                    
                     loadImageStatus(); // Refresh image status
                 } else {
                     updateStatus(`Failed to load preset: ${result.error}`, 'error');
@@ -780,18 +1112,25 @@
         function displayPresets(presets) {
             presetList.innerHTML = '';
             
-            if (presets.length === 0) {
+            // Add safety check for presets array
+            if (!presets || !Array.isArray(presets) || presets.length === 0) {
                 presetList.innerHTML = '<div class="status">No presets available</div>';
                 return;
             }
             
             presets.forEach(preset => {
+                // Add safety checks for preset properties
+                if (!preset || !preset.name) {
+                    console.warn('Invalid preset data:', preset);
+                    return;
+                }
+                
                 const presetItem = document.createElement('div');
                 presetItem.className = 'expression-item';
                 
                 presetItem.innerHTML = `
                     <span class="expression-name">${preset.name}</span>
-                    <span class="expression-status">${preset.total_images} images</span>
+                    <span class="expression-status">${preset.total_images || 0} images</span>
                     <button class="file-button" onclick="loadPreset('${preset.name}')">LOAD</button>
                     <button class="file-button clear-button" onclick="deletePreset('${preset.name}')">DELETE</button>
                 `;
@@ -804,6 +1143,21 @@
             statusElement.textContent = message.toUpperCase();
             statusElement.className = `status ${type}`;
         }
+
+        function toggleOverlay() {
+            showOverlay = !showOverlay;
+            if (showOverlay) {
+                overlayElement.style.display = 'block';
+                toggleOverlayBtn.textContent = 'HIDE OVERLAY';
+                viewMode.textContent = 'Detection Overlay';
+            } else {
+                overlayElement.style.display = 'none';
+                toggleOverlayBtn.textContent = 'SHOW OVERLAY';
+                viewMode.textContent = 'Raw Camera';
+            }
+        }
     </script>
 </body>
 </html>
+
+

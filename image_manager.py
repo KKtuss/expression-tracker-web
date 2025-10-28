@@ -32,8 +32,7 @@ class ImageManager:
             'eyes_closed': self.create_default_image("Eyes Closed", "blue"),
             'looking_left': self.create_default_image("Looking Left", "orange"),
             'looking_right': self.create_default_image("Looking Right", "purple"),
-            'looking_center': self.create_default_image("Looking Center", "yellow"),
-            'neutral': self.create_default_image("Neutral", "gray")
+            'looking_center': self.create_default_image("Looking Center", "yellow")
         }
         
         for key, img in default_images.items():
@@ -51,6 +50,16 @@ class ImageManager:
         try:
             # Convert bytes to PIL Image
             image = Image.open(BytesIO(image_data))
+            
+            # Convert RGBA to RGB if necessary (for PNG images with transparency)
+            if image.mode == 'RGBA':
+                # Create a white background
+                background = Image.new('RGB', image.size, (255, 255, 255))
+                background.paste(image, mask=image.split()[-1])  # Use alpha channel as mask
+                image = background
+            elif image.mode != 'RGB':
+                image = image.convert('RGB')
+            
             # Resize to fit display (same as desktop app)
             image = image.resize((400, 300), Image.Resampling.LANCZOS)
             self.images[expression_type] = image
