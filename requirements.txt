@@ -4,10 +4,10 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 
 # Computer vision and ML - more compatible versions
-opencv-python-headless
-mediapipe>=0.10.14
-pillow
-numpy
+opencv-python-headless==4.8.1.78
+mediapipe==0.10.14
+pillow==10.1.0
+numpy==1.24.3
 
 # Additional dependencies
 websockets==12.0
